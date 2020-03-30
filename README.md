@@ -1,6 +1,6 @@
 [Оригинал](https://isocpp.org/wiki/faq/exceptions#why-exceptions)
 
-# Зачем нужны исключения?
+### Зачем нужны исключения?
 
 *Что исключения дают мне?* Общий ответ: Использование исключений при обработке ошибок делает ваш код проще, чище, надежнее. 
 *Что не так со старым добрым errno и if-else?* Общий ответ: Они порождают переплетение обычного кода и кода обработки ошибок. Так ваш код становится беспорядочным истановится сложно понять, все ли ошибки вы обрабатываете ("спагетти-код", "крысиное гнездо проверок").
@@ -22,7 +22,7 @@ Imagine that we did not have exceptions, how would you deal with an error detect
     if (os.bad())  { /* handle error */ }
 ```
 
-Видите эти дополнительные тесты на каждый объект? Полный бардак наступает при использовании классов, содержащих в себе несколько объектов, особенно если эти объеты взаимозависимы. Подробнее читайте в параграфе 8.3  и приложении 14 "C++ Programming Language" или в более научной статье [Exception safety: Concepts and techniques](http://stroustrup.com/except.pdf).
+Видите эти дополнительные тесты на каждый объект? Полный бардак наступает при использовании классов, содержащих в себе несколько объектов, особенно если эти объеты взаимозависимы. Подробнее читайте в параграфе 8.3, главе 14  и приложении Е книги "C++ Programming Language" или в более научной статье [Exception safety: Concepts and techniques](http://stroustrup.com/except.pdf).
 
 So writing constructors can be tricky without exceptions, but what about plain old functions? We can either return an error code or set a non-local variable (e.g., errno). Setting a global variable doesn’t work too well unless you test it immediately (or some other function might have re-set it). Don’t even think of that technique if you might have multiple threads accessing the global variable. The trouble with return values are that choosing the error return value can require cleverness and can be impossible:
 
@@ -39,3 +39,9 @@ So writing constructors can be tricky without exceptions, but what about plain o
 * "В JSF++ Страуструп прямо запрещает исключения". JSF++ написан для жеткого реального времени и safety-critical приложений управления полетом. Если вычисления занимают продолжительное время -кто-то может погибнуть, поэтому нам приходится гарантировать премя исполнения, но на текущем уровне назвития мы не можем дать гарантий для исключений. В данном случае запрещено даже распределение свободной памяти. Вообще говоря, рекомендации JSF++ симулируют работу исключений в ожидании дня, когда инструменты будут позволять дать больше гарантий при использовании исключений.
 * "Использование конструктора, вызванного операцией new, вызывает утечку памяти". Брехня! Это бабьи басни, вызванные ошибкой в одном из компиляторов, исправленной десятилетие назад.
 
+### Как использовать исключения?
+Подробнее читайте в параграфе 8.3, главе 14  и приложении Е книги "C++ Programming Language". Приложение написано не для новичков.
+
+In C++, exceptions are used to signal errors that cannot be handled locally, such as the failure to acquire a resource in a constructor. For example:
+
+В С++ исключенияиспользуются для оповещения об ошибках, которые нельзя обработать в месте их возникновения, например ошибка выделения ресурсов, запрошеных в конструкторе.
