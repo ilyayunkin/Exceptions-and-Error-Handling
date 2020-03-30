@@ -83,22 +83,11 @@ Do not use exceptions as simply another way to return a value from a function. M
 Если при использовании f бросаются исключения или просто встречается return, файл не будет закрыт. В программах на языке Си longjmp() является дополнительной угрозой.
 
 ### Как не стоит использовать исключения?
-C++ exceptions are designed to support error handling.
-
-Use throw only to signal an error (which means specifically that the function couldn’t do what it advertised, and establish its postconditions).
-Use catch only to specify error handling actions when you know you can handle an error (possibly by translating it to another type and rethrowing an exception of that type, such as catching a bad_alloc and rethrowing a no_space_for_file_buffers).
-Do not use throw to indicate a coding error in usage of a function. Use assert or other mechanism to either send the process into a debugger or to crash the process and collect the crash dump for the developer to debug.
-Do not use throw if you discover unexpected violation of an invariant of your component, use assert or other mechanism to terminate the program. Throwing an exception will not cure memory corruption and may lead to further corruption of important user data.
-
 Исключения в С++ созданы для *обработки ошибок*.
 *Используйте **throw** только чтобы сообщить о возникновении ошибки, когда функция не может выполнить то, что она обещает и выполнить ее постусловия.
 *Используйте **catch** только когда вы знаете, что можете обработать ошибку (иногда переводом ошибки в другой тип и бросанием исключения нового типа - например, поймав bad_alloc, можно бросить no_space_for_file_buffers).
 *Не используйте **throw** для оповещения об ошибках использования - используйте **assert** или иные средства, чтобы отправить процесс в отладчик, или дайте процессу упасть, чтобы получить **crash dump** для отладки.
 *Не используйте  **throw** при обнаружении неожиданного нарушения инварианта в вашем компоненте - используйте **assert** или иные средства, чтобы завершить программу. Бросание исключения не излечит порчу памяти и может повлечь дальнейшую порчу пользовательских данных.
-
-There are other uses of exceptions – popular in other languages – but not idiomatic in C++ and deliberately not supported well by C++ implementations (those implementations are optimized based on the assumption that exceptions are used for error handling).
-
-In particular, do not use exceptions for control flow. throw is not simply an alternative way of returning a value from a function (similar to return). Doing so will be slow and will confuse most C++ programmers who are rightly used to seeing exceptions used only for error handling. Similarly, throw is not a good way of getting out of a loop.
 
 Есть иные приложения исключений, используемые в других языках, но нестандартные для С++ и не поддерживаемые в полной мере в реазизациях  С++.
 
@@ -167,4 +156,100 @@ void f10()
   if ( /*...some error condition...*/ )
     throw some_exception();
   // ...
+}
+```
+
+Только код, обнаруживающий ошибку, f10() и код, обрабатывающий ошибку, f1() получают некоторую рябь.
+Использовании кодов ошибок порождает много кода по передаче ошибки через каждую функцию в цепочке:
+```
+int f1()
+{
+  // ...
+  int rc = f2();
+  if (rc == 0) {
+    // ...
+  } else {
+    // ...code that handles the error...
+  }
+}
+int f2()
+{
+  // ...
+  int rc = f3();
+  if (rc != 0)
+    return rc;
+  // ...
+  return 0;
+}
+int f3()
+{
+  // ...
+  int rc = f4();
+  if (rc != 0)
+    return rc;
+  // ...
+  return 0;
+}
+int f4()
+{
+  // ...
+  int rc = f5();
+  if (rc != 0)
+    return rc;
+  // ...
+  return 0;
+}
+int f5()
+{
+  // ...
+  int rc = f6();
+  if (rc != 0)
+    return rc;
+  // ...
+  return 0;
+}
+int f6()
+{
+  // ...
+  int rc = f7();
+  if (rc != 0)
+    return rc;
+  // ...
+  return 0;
+}
+int f7()
+{
+  // ...
+  int rc = f8();
+  if (rc != 0)
+    return rc;
+  // ...
+  return 0;
+}
+int f8()
+{
+  // ...
+  int rc = f9();
+  if (rc != 0)
+    return rc;
+  // ...
+  return 0;
+}
+int f9()
+{
+  // ...
+  int rc = f10();
+  if (rc != 0)
+    return rc;
+  // ...
+  return 0;
+}
+int f10()
+{
+  // ...
+  if (...some error condition...)
+    return some_nonzero_error_code;
+  // ...
+  return 0;
+}
 ```
