@@ -96,3 +96,10 @@ Do not use throw if you discover unexpected violation of an invariant of your co
 *Не используйте **throw** для оповещения об ошибках использования - используйте **assert** или иные средства, чтобы отправить процесс в отладчик, или дайте процессу упасть, чтобы получить **crash dump** для отладки.
 *Не используйте  **throw** при обнаружении неожиданного нарушения инварианта в вашем компоненте - используйте **assert** или иные средства, чтобы завершить программу. Бросание исключения не излечит порчу памяти и может повлечь дальнейшую порчу пользовательских данных.
 
+There are other uses of exceptions – popular in other languages – but not idiomatic in C++ and deliberately not supported well by C++ implementations (those implementations are optimized based on the assumption that exceptions are used for error handling).
+
+In particular, do not use exceptions for control flow. throw is not simply an alternative way of returning a value from a function (similar to return). Doing so will be slow and will confuse most C++ programmers who are rightly used to seeing exceptions used only for error handling. Similarly, throw is not a good way of getting out of a loop.
+
+Есть иные приложения исключений, используемые в других языках, но нестандартные для С++ и не поддерживаемые в полной мере в реазизациях  С++.
+
+В частности, не используйте исключения для описания логики. Оператор **throw** - не посто иной способ вернуть значение из функции. Это сделает вашу программу медленной и смутит большинство С++ программистов, которые используют исключения только для обработки ошибок. Так же **throw** - плохой способ выйти из цикла.
