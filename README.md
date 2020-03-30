@@ -2,8 +2,8 @@
 
 ### Зачем нужны исключения?
 
-*Что исключения дают мне?* Общий ответ: Использование исключений при обработке ошибок делает ваш код проще, чище, надежнее. 
-*Что не так со старым добрым errno и if-else?* Общий ответ: Они порождают переплетение обычного кода и кода обработки ошибок. Так ваш код становится беспорядочным истановится сложно понять, все ли ошибки вы обрабатываете ("спагетти-код", "крысиное гнездо проверок").
+**Что исключения дают мне?** Общий ответ: Использование исключений при обработке ошибок делает ваш код проще, чище, надежнее. 
+**Что не так со старым добрым errno и if-else?** Общий ответ: Они порождают переплетение обычного кода и кода обработки ошибок. Так ваш код становится беспорядочным истановится сложно понять, все ли ошибки вы обрабатываете ("спагетти-код", "крысиное гнездо проверок").
 
 МНогие вещи просто невозможны без исключений. Представьте, что ошибка обнаружена в конструкторе - как вы о ней сообщите? Придется бросить исключение. Это основа идиомы RAII (Выделение ресурсов есть инициализация), которая сама является основой наиболее эффективных современных техник. Задача конструктора - гарантировать инвариант класса (создать среду, в которой функции-члены работают), что обычно требует выделения ресурсов (памяти, блокировок, файлов, сокетов, ...).
 
@@ -42,6 +42,57 @@ So writing constructors can be tricky without exceptions, but what about plain o
 ### Как использовать исключения?
 Подробнее читайте в параграфе 8.3, главе 14  и приложении Е книги "C++ Programming Language". Приложение написано не для новичков.
 
-In C++, exceptions are used to signal errors that cannot be handled locally, such as the failure to acquire a resource in a constructor. For example:
+В С++ исключения используются для оповещения об ошибках, которые нельзя обработать в месте их возникновения, например ошибка выделения ресурсов, запрошеных в конструкторе:
+```
+    class VectorInSpecialMemory {
+        int sz;
+        int* elem;
+    public:
+        VectorInSpecialMemory(int s) 
+            : sz(s) 
+            , elem(AllocateInSpecialMemory(s))
+        { 
+            if (elem == nullptr)
+                throw std::bad_alloc();
+        }
+        ...
+    };
+```
 
-В С++ исключенияиспользуются для оповещения об ошибках, которые нельзя обработать в месте их возникновения, например ошибка выделения ресурсов, запрошеных в конструкторе.
+Do not use exceptions as simply another way to return a value from a function. Most users assume – as the language definition encourages them to – that ** exception-handling code is error-handling code **, and implementations are optimized to reflect that assumption.
+
+Не пользуйтесь исключениями просто для возврата значения из функции. Исключения предназначены для обработки ошибок и реализации оптимизированы в этом направлении.
+
+Ключевая техника - RAII (resource acquisition is initialization), использующая конструкторы и деструкторы чтобы упорядочить управление ресурсами:
+```
+  void fct(string s)
+    {
+        File_handle f(s,"r");   // File_handle's constructor opens the file called "s"
+        // use f
+    } // here File_handle's destructor closes the file  
+```
+Если при использовании f бросаются исключения, деструктор будет вызван и файл будет должным образом закрыт, в отличие от типового стандартного решения:
+```
+    void old_fct(const char* s)
+    {
+        FILE* f = fopen(s,"r"); // open the file named "s"
+        // use f
+        fclose(f);  // close the file
+    }
+```    
+Если при использовании f бросаются исключения или просто встречается return, файл не будет закрыт. В программах на языке Си longjmp() является дополнительной угрозой.
+
+### Как не стоит использовать исключения?
+C++ exceptions are designed to support error handling.
+
+Use throw only to signal an error (which means specifically that the function couldn’t do what it advertised, and establish its postconditions).
+Use catch only to specify error handling actions when you know you can handle an error (possibly by translating it to another type and rethrowing an exception of that type, such as catching a bad_alloc and rethrowing a no_space_for_file_buffers).
+Do not use throw to indicate a coding error in usage of a function. Use assert or other mechanism to either send the process into a debugger or to crash the process and collect the crash dump for the developer to debug.
+Do not use throw if you discover unexpected violation of an invariant of your component, use assert or other mechanism to terminate the program. Throwing an exception will not cure memory corruption and may lead to further corruption of important user data.
+
+Исключения в С++ созданы для *обработки ошибок*.
+*Используйте **throw** только чтобы сообщить о возникновении ошибки, когда функция не может выполнить то, что она обещает и выполнить ее постусловия.
+*Используйте **catch** только когда вы знаете, что можете обработать ошибку (иногда переводом ошибки в другой тип и бросанием исключения нового типа - например, поймав bad_alloc, можно бросить no_space_for_file_buffers).
+*Не используйте **throw** для оповещения об ошибках использования - используйте **assert** или иные средства, чтобы отправить процесс в отладчик, или дайте процессу упасть, чтобы получить **crash dump** для отладки.
+*Не используйте  **throw** при обнаружении неожиданного нарушения инварианта в вашем компоненте - используйте **assert** или иные средства, чтобы завершить программу. Бросание исключения не излечит порчу памяти и может повлечь дальнейшую порчу пользовательских данных.
+
