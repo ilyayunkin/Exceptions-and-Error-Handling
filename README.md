@@ -318,3 +318,78 @@ void f(Number x, Number y)
   }
 }
 ```
+Если мы возвращаем код ошибок, наша жизнь усложняется. Когда не получается впихнуть и значение, и код ошибки в объект Number, вы, скорее всего, решите использовать дополнительный аргумент для возврата по ссылке одного из значений:
+```
+class Number {
+public:
+  enum ReturnCode {
+    Success,
+    Overflow,
+    Underflow,
+    DivideByZero
+  };
+  Number add(const Number& y, ReturnCode& rc) const;
+  Number sub(const Number& y, ReturnCode& rc) const;
+  Number mul(const Number& y, ReturnCode& rc) const;
+  Number div(const Number& y, ReturnCode& rc) const;
+  // ...
+};
+```
+А так вам пришлось бы использовать этот код:
+```
+int f(Number x, Number y)
+{
+  // ...
+  Number::ReturnCode rc;
+  Number sum = x.add(y, rc);
+  if (rc == Number::Overflow) {
+    // ...code that handles overflow...
+    return -1;
+  } else if (rc == Number::Underflow) {
+    // ...code that handles underflow...
+    return -1;
+  } else if (rc == Number::DivideByZero) {
+    // ...code that handles divide-by-zero...
+    return -1;
+  }
+  Number diff = x.sub(y, rc);
+  if (rc == Number::Overflow) {
+    // ...code that handles overflow...
+    return -1;
+  } else if (rc == Number::Underflow) {
+    // ...code that handles underflow...
+    return -1;
+  } else if (rc == Number::DivideByZero) {
+    // ...code that handles divide-by-zero...
+    return -1;
+  }
+  Number prod = x.mul(y, rc);
+  if (rc == Number::Overflow) {
+    // ...code that handles overflow...
+    return -1;
+  } else if (rc == Number::Underflow) {
+    // ...code that handles underflow...
+    return -1;
+  } else if (rc == Number::DivideByZero) {
+    // ...code that handles divide-by-zero...
+    return -1;
+  }
+  Number quot = x.div(y, rc);
+  if (rc == Number::Overflow) {
+    // ...code that handles overflow...
+    return -1;
+  } else if (rc == Number::Underflow) {
+    // ...code that handles underflow...
+    return -1;
+  } else if (rc == Number::DivideByZero) {
+    // ...code that handles divide-by-zero...
+    return -1;
+  }
+  // ...
+}
+```
+Суть сказанного в том, что обычно возврат кодов ошибки приводит к уродованию интерфейсов функций, в частности, особенно если требудется передать больше информации об ошибках. Если возможны 5 ошибочных состояний и подробности ошибки представляются различными структурами данных, у вас может получиться действительно уродливый интерфейс функции.
+
+Весь этот шум не возникает при использовании исключений, которые могут быть рассмотрены как дополнительное возвращаемое значение - функции автоматически прирастают новыми типами возвращаемых значений.
+
+Замечание: не предлагайте использовать возвращаемые значения и хранение информации в статических переменных с областью видимости вроде Number::lastError(). Это не потокобезопасно. Даже если сегодня у вас только один поток, вы вряд ли пожелаете навечно ограничить кого-то в использовании вашего класса в многопоточной среде. Если вы все же хотите, вам следует писать большими буквами предупреждения для программистов о том, что ваш код не потокобезопасен и, возможно, не может быть таковым без основательного переписывания.
