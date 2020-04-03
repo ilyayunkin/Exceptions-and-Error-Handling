@@ -614,3 +614,16 @@ public:
   // ...
 };
 ```
+Это упростит код  с использованием ваших объектов: ваши пользователи смогут писать Fred::Ptr вместо std::unique_ptr<Fred>:   
+    
+```   
+#include "Fred.h"
+void f(std::unique_ptr<Fred> p);  // explicit but verbose
+void f(Fred::Ptr             p);  // simpler
+void g()
+{
+  std::unique_ptr<Fred> p1( new Fred() );  // explicit but verbose
+  Fred::Ptr             p2( new Fred() );  // simpler
+  // ...
+}
+```
