@@ -627,3 +627,67 @@ void g()
   // ...
 }
 ```
+
+### Как изменять дляну строки массива символов, чтобы не допустить утечки памяти даже если кто-то бросит исключение?
+Если вы хотите работать со мтроками, не используйте массивы. Используйте какой-либо строковый класс.
+Например, предположим, что вы хотите получить копию строки, поиграть с копией, а затем добавить еще одну строку в конец измененной копии. Так это реализуется с помощью массивов:
+```
+void userCode(const char* s1, const char* s2)
+{
+  char* copy = new char[strlen(s1) + 1];    // make a copy
+  strcpy(copy, s1);                         //   of s1...
+  // use a try block to prevent memory leaks if we get an exception
+  // note: we need the try block because we used a "dumb" char* above
+  try {
+    // ...code that fiddles with copy...
+    char* copy2 = new char[strlen(copy) + strlen(s2) + 1];  // append s2
+    strcpy(copy2, copy);                                    //   onto the
+    strcpy(copy2 + strlen(copy), s2);                       //     end of
+    delete[] copy;                                          //       copy...
+    copy = copy2;
+    // ...code that fiddles with copy again...
+  }
+  catch (...) {
+    delete[] copy;   // we got an exception; prevent a memory leak
+    throw;           // re-throw the current exception
+  }
+  delete[] copy;     // we did not get an exception; prevent a memory leak
+}
+```
+Работать так с указателями утомительно ичеревато ошибками. Почему бы просто не использовать  строковый класс? Вероятно, ваш компилятор предоставляет строковый класс, который, вероятно, так же быстр, и он определенно проще и безопаснее, чем самописный код с указателями. Если вы используете std::string, то получет примерно такой код:
+```
+#include <string>           // Let the compiler see std::string
+void userCode(const std::string& s1, const std::string& s2)
+{
+  std::string copy = s1;    // make a copy of s1
+  // ...code that fiddles with copy...
+  copy += s2;               // append s2 onto the end of copy
+  // ...code that fiddles with copy again...
+}
+```
+Код с указателями в три раза длиннее. Большая часть выгоды полученя благодаря тому, что std::string сам управляет памятью. Не нужно писать код, чтобы:
+* выделять дополнительную память при увеличении строки,
+* освобождать память,
+* ловить и бросать снова исключения.
+
+### Что я должен бросать?
+C++ очень удобен при работе с исключениями - вы можете бросить все, что угодно. Но что вы должны бросать?
+
+В общем случае лучше бросать объекты. Если возможно, лучше бросать что-то, что наследует от std::exception. Наследование от std::exception упрощает жизнь вашим пользователям - они смогут ловить большинство исключений как std::exception. Вероятно, вы предоставите пользователю больше информации - бросите объект конкретного класса вроде  std :: runtime_error.
+
+Наиболее распространенная практика - бросание временного объекта:
+```
+#include <stdexcept>
+class MyException : public std::runtime_error {
+public:
+  MyException() : std::runtime_error("MyException") { }
+};
+void f()
+{
+   // ...
+   throw MyException();
+}
+```
+Здесь бросается временный объект класса MyException, наследующего std::runtime_error, который в свою очередь наследует std::exception.
+
+
