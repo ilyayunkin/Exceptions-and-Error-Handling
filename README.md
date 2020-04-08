@@ -845,3 +845,31 @@ void g()
 
 Бросаемые объекты должны иметь публичный конструктор копирования. Компилятор может генерировать код, который копирует объект исключения сколько угодно раз, в том числе и ноль.  Однако, доступный конструктор копирования нужно иметь всегда.
 
+### Почему в С++ нет конструкции “finally”?  
+Потому что С++ имеет альтернативу, которая работает лучше почти весгда: RAII. Основная идеяв том, чтобы представить ресурсы локальным объектом, чтобы деструктор освобождал ресурсы. Тогда программист не может забыть освободить ресурсы:
+```
+    // wrap a raw C file handle and put the resource acquisition and release
+    // in the C++ type's constructor and destructor, respectively
+    class File_handle {
+        FILE* p;
+    public:
+        File_handle(const char* n, const char* a)
+            { p = fopen(n,a); if (p==0) throw Open_error(errno); }
+        File_handle(FILE* pp)
+            { p = pp; if (p==0) throw Open_error(errno); }
+        ~File_handle() { fclose(p); }
+        operator FILE*() { return p; }   // if desired
+        // ...
+    };
+    // use File_handle: uses vastly outnumber the above code
+    void f(const char* fn)
+    {
+        File_handle f(fn,"rw"); // open fn for reading and writing
+        // use file through f
+    } // automatically destroy f here, calls fclose automatically with no extra effort
+      // (even if there's an exception, so this is exception-safe by construction)
+```
+В худшем случае у нас будет столько же классов управления ресурсами, сколько и ресурсов. Однако в реальной жизни выделений ресурсов гораздо больше, чем типов ресурсов, тоак что RAII порождает меньше кода, чем  “finally”.
+
+Посмотрите другие примеры в Appendix E of TC++PL3e.
+
