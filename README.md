@@ -778,3 +778,70 @@ void f()
 }
 ```
 Данная идиома позволяет одной функции обрабатывать исключения во множестве других функций.
+
+*** Как бросить полиморфично?
+Иногда люди пишут такой код:
+```
+class MyExceptionBase { };
+class MyExceptionDerived : public MyExceptionBase { };
+void f(MyExceptionBase& e)
+{
+  // ...
+  throw e;
+}
+void g()
+{
+  MyExceptionDerived e;
+  try {
+    f(e);
+  }
+  catch (MyExceptionDerived& e) {
+    // ...code to handle MyExceptionDerived...
+  }
+  catch (...) {
+    // ...code to handle other exceptions...
+  }
+}
+```
+Если вы запустите такой код, вы можете удивиться, поав в **catch(...)** вместо ***catch (MyExceptionDerived&)***. А все потому что вы бросили по ссылке на базовый класс. В f() выражение ***throw e;*** бросает объект с типом, который имеет e. другими словами вы бросили MyExceptionBase. 
+
+К счастью, все легко исправить:
+```
+class MyExceptionBase {
+public:
+  virtual void raise();
+};
+void MyExceptionBase::raise()
+{ throw *this; }
+class MyExceptionDerived : public MyExceptionBase {
+public:
+  virtual void raise();
+};
+void MyExceptionDerived::raise()
+{ throw *this; }
+void f(MyExceptionBase& e)
+{
+  // ...
+  e.raise();
+}
+void g()
+{
+  MyExceptionDerived e;
+  try {
+    f(e);
+  }
+  catch (MyExceptionDerived& e) {
+    // ...code to handle MyExceptionDerived...
+  }
+  catch (...) {
+    // ...code to handle other exceptions...
+  }
+}
+```
+Заметьте, что ***throw*** перемещен в виртуальную функцию. Выражение e.raise() демонстрирует полиморфное поведение, т.к. raise() объявлен виртуальным и e передан по ссылке
+
+### Сколько раз копируется брошеный объект?
+По-разному. Возможно, нисколько.
+
+Бросаемые объекты должны иметь публичный конструктор копирования. Компилятор может генерировать код, который копирует объект исключения сколько угодно раз, в том числе и ноль.  Однако, доступный конструктор копирования нужно иметь всегда.
+
