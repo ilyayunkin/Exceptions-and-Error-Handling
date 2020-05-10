@@ -1,4 +1,5 @@
 [Оригинал](https://isocpp.org/wiki/faq/exceptions#why-exceptions)
+# Обработка ошибок и исключений на языке C++
 
 ### Зачем нужны исключения?
 
