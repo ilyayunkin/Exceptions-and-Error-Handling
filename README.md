@@ -56,11 +56,9 @@
     };
 ```
 
-Do not use exceptions as simply another way to return a value from a function. Most users assume – as the language definition encourages them to – that ** exception-handling code is error-handling code **, and implementations are optimized to reflect that assumption.
-
 Не пользуйтесь исключениями просто для возврата значения из функции. Исключения предназначены для обработки ошибок и реализации оптимизированы в этом направлении.
 
-Ключевая техника - RAII (resource acquisition is initialization), использующая конструкторы и деструкторы чтобы упорядочить управление ресурсами:
+Базовой техникой является идиома RAII (resource acquisition is initialization), использующая конструкторы и деструкторы для управление ресурсами:
 ```
   void fct(string s)
     {
