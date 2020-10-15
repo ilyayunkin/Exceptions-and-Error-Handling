@@ -23,9 +23,7 @@
 
 Видите эти дополнительные тесты на каждый объект? Полный бардак наступает при использовании классов, содержащих в себе несколько объектов, особенно если эти объеты взаимозависимы. Подробнее читайте в параграфе 8.3, главе 14  и приложении Е книги "C++ Programming Language" или в более научной статье [Exception safety: Concepts and techniques](http://stroustrup.com/except.pdf).
 
-So writing constructors can be tricky without exceptions, but what about plain old functions? We can either return an error code or set a non-local variable (e.g., errno). Setting a global variable doesn’t work too well unless you test it immediately (or some other function might have re-set it). Don’t even think of that technique if you might have multiple threads accessing the global variable. The trouble with return values are that choosing the error return value can require cleverness and can be impossible:
-
-Итак, написание конструкторов может быть непростым без исключений. А что с простыми функциями, Мы могли бы вернуть код ошибки или установить нелокальную переменную (errno, например). Передача значения через глобальную переменную не работает хорошо, сли вы не проверяете ее сразу же. Даже не думайте о таком пути, если у вас больше одного потока. Возврат ошибок через возвращаемое значение может потребовать смекалки и быть вообще невозможным:
+Итак, написание конструкторов может быть непростым без исключений. А что с простыми функциями? Мы могли бы вернуть код ошибки или установить нелокальную переменную (errno, например). Передача значения через глобальную переменную не работает хорошо, сли вы не проверяете ее сразу же. Даже не думайте о таком пути, если у вас больше одного потока. Возврат ошибок через возвращаемое значение может потребовать смекалки и быть вообще невозможным:
 ```
     double d = my_sqrt(-1);     // return -1 in case of error
     if (d == -1) { /* handle error */ }
